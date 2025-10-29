@@ -12,7 +12,7 @@ namespace GenAiMisinformation
         private void button1_Click(object sender, EventArgs e)
         {
             StringBuilder sb = new StringBuilder();
-            string text = "Test";
+            string text = "Test 123";
             sb.Append(text);
             MessageBox.Show(sb.ToString());
         }
