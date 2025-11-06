@@ -58,5 +58,10 @@ namespace GenAiMisinformation
                 dataGridView1.DataSource = filteredRecords;
             }
         }
+
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
