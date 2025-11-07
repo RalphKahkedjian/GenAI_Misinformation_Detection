@@ -28,12 +28,91 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Text = "loginForm";
+            textBox1 = new TextBox();
+            textBox2 = new TextBox();
+            button1 = new Button();
+            label1 = new Label();
+            label2 = new Label();
+            label3 = new Label();
+            SuspendLayout();
+            // 
+            // textBox1
+            // 
+            textBox1.Location = new Point(272, 127);
+            textBox1.Name = "textBox1";
+            textBox1.Size = new Size(199, 27);
+            textBox1.TabIndex = 0;
+            // 
+            // textBox2
+            // 
+            textBox2.Location = new Point(272, 185);
+            textBox2.Name = "textBox2";
+            textBox2.Size = new Size(199, 27);
+            textBox2.TabIndex = 1;
+            // 
+            // button1
+            // 
+            button1.Location = new Point(302, 230);
+            button1.Name = "button1";
+            button1.Size = new Size(125, 31);
+            button1.TabIndex = 2;
+            button1.Text = "Login";
+            button1.UseVisualStyleBackColor = true;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Font = new Font("Verdana", 24F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            label1.Location = new Point(143, 42);
+            label1.Name = "label1";
+            label1.Size = new Size(515, 48);
+            label1.TabIndex = 3;
+            label1.Text = "GenAI Misinformation";
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(201, 324);
+            label2.Name = "label2";
+            label2.Size = new Size(33, 20);
+            label2.TabIndex = 4;
+            label2.Text = "test";
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(440, 285);
+            label3.Name = "label3";
+            label3.Size = new Size(35, 20);
+            label3.TabIndex = 5;
+            label3.Text = "Test";
+            label3.Click += label3_Click;
+            // 
+            // loginForm
+            // 
+            AutoScaleDimensions = new SizeF(8F, 20F);
+            AutoScaleMode = AutoScaleMode.Font;
+            BackColor = Color.FromArgb(189, 236, 175);
+            ClientSize = new Size(800, 450);
+            Controls.Add(label3);
+            Controls.Add(label2);
+            Controls.Add(label1);
+            Controls.Add(button1);
+            Controls.Add(textBox2);
+            Controls.Add(textBox1);
+            Name = "loginForm";
+            Text = "loginForm";
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
+
+        private TextBox textBox1;
+        private TextBox textBox2;
+        private Button button1;
+        private Label label1;
+        private Label label2;
+        private Label label3;
     }
 }
