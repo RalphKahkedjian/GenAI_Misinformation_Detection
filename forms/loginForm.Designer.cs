@@ -32,8 +32,6 @@
             textBox2 = new TextBox();
             button1 = new Button();
             label1 = new Label();
-            label2 = new Label();
-            label3 = new Label();
             SuspendLayout();
             // 
             // textBox1
@@ -58,6 +56,7 @@
             button1.TabIndex = 2;
             button1.Text = "Login";
             button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
             // 
             // label1
             // 
@@ -69,33 +68,12 @@
             label1.TabIndex = 3;
             label1.Text = "GenAI Misinformation";
             // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(201, 324);
-            label2.Name = "label2";
-            label2.Size = new Size(33, 20);
-            label2.TabIndex = 4;
-            label2.Text = "test";
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(440, 285);
-            label3.Name = "label3";
-            label3.Size = new Size(35, 20);
-            label3.TabIndex = 5;
-            label3.Text = "Test";
-            label3.Click += label3_Click;
-            // 
             // loginForm
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(189, 236, 175);
-            ClientSize = new Size(800, 450);
-            Controls.Add(label3);
-            Controls.Add(label2);
+            ClientSize = new Size(800, 368);
             Controls.Add(label1);
             Controls.Add(button1);
             Controls.Add(textBox2);
@@ -112,7 +90,5 @@
         private TextBox textBox2;
         private Button button1;
         private Label label1;
-        private Label label2;
-        private Label label3;
     }
 }
