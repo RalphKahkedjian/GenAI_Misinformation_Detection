@@ -283,7 +283,11 @@ namespace GenAiMisinformation.forms
 
                     for (int i = 0; i < total; i++)
                     {
-                        token.ThrowIfCancellationRequested();
+                        if (token.IsCancellationRequested)
+                        {
+                            MessageBox.Show("Operation was cancelled");
+                            break;
+                        }
 
                         if (records[i].is_misinformation)
                             misinfo++;
