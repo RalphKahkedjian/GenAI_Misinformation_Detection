@@ -24,10 +24,11 @@ namespace GenAiMisinformation.forms
         private Label lblTotalPosts = null!;
         private Label lblMisinfoPosts = null!;
         private Label lblMisinfoRate = null!;
+        private ProgressBar progressBar = null!;  // NEW
 
         private viewDataControl viewDataControl = null!;
 
-        // nullable: only set while analysis is running
+        // nullable: only active while analysis is running
         private CancellationTokenSource? analysisCts;
 
         public dashboardForm()
@@ -63,7 +64,7 @@ namespace GenAiMisinformation.forms
             this.Controls.Add(mainPanel);
             this.Controls.Add(sidebarPanel);
 
-            // ----- Button panel (middle) -----
+            // ----- Buttons panel (middle) -----
             buttonPanel = new FlowLayoutPanel
             {
                 FlowDirection = FlowDirection.TopDown,
@@ -91,7 +92,7 @@ namespace GenAiMisinformation.forms
             resultsPanel = new Panel
             {
                 Dock = DockStyle.Bottom,
-                Height = 160,
+                Height = 180,
                 BackColor = Color.FromArgb(230, 255, 230)
             };
 
@@ -135,7 +136,29 @@ namespace GenAiMisinformation.forms
             };
             resultsPanel.Controls.Add(lblMisinfoRate);
 
-            // ----- Title panel (added last so it stays on top) -----
+            // ----- ProgressBar (inside results panel) -----
+            progressBar = new ProgressBar
+            {
+                Minimum = 0,
+                Maximum = 100,
+                Value = 0,
+                Step = 1,
+                Width = resultsPanel.Width - 50,
+                Height = 18,
+                Location = new Point(25, 125),
+                Style = ProgressBarStyle.Continuous
+            };
+            progressBar.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+
+            // Resize handler so bar stretches with the panel
+            resultsPanel.Resize += (s, e) =>
+            {
+                progressBar.Width = resultsPanel.Width - 50;
+            };
+
+            resultsPanel.Controls.Add(progressBar);
+
+            // ----- Title panel (top, added last so it stays above buttons) -----
             Panel titlePanel = new Panel
             {
                 Dock = DockStyle.Top,
@@ -154,7 +177,7 @@ namespace GenAiMisinformation.forms
             };
             titlePanel.Controls.Add(titleLabel);
 
-            // Order matters for Dock:
+            // Dock order: bottom → middle → top
             sidebarPanel.Controls.Add(resultsPanel); // bottom
             sidebarPanel.Controls.Add(buttonPanel);  // middle
             sidebarPanel.Controls.Add(titlePanel);   // top
@@ -245,28 +268,54 @@ namespace GenAiMisinformation.forms
             lblTotalPosts.Text = "Total posts: ...";
             lblMisinfoPosts.Text = "Misinformation posts: ...";
             lblMisinfoRate.Text = "Misinformation rate: ...";
+            progressBar.Value = 0;
 
             try
             {
                 var records = viewDataControl.Records;
+                int total = records.Count;
+                if (total == 0)
+                    throw new InvalidOperationException("No records to analyze.");
 
                 var result = await Task.Run(() =>
                 {
-                    int total = 0;
                     int misinfo = 0;
 
-                    foreach (var r in records)
+                    for (int i = 0; i < total; i++)
                     {
                         token.ThrowIfCancellationRequested();
 
-                        total++;
-                        if (r.is_misinformation)
+                        if (records[i].is_misinformation)
                             misinfo++;
 
+                        // Simulate work
                         Thread.Sleep(1);
+
+                        // Update progress every 200 items or at end
+                        if (i % 200 == 0 || i == total - 1)
+                        {
+                            int percent = (int)((i + 1) * 100.0 / total);
+                            try
+                            {
+                                // Marshal progress update to UI thread
+                                this.Invoke((Action)(() =>
+                                {
+                                    if (!progressBar.IsDisposed)
+                                    {
+                                        if (percent < 0) percent = 0;
+                                        if (percent > 100) percent = 100;
+                                        progressBar.Value = percent;
+                                    }
+                                }));
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                // Form closed during analysis; ignore
+                            }
+                        }
                     }
 
-                    double rate = total == 0 ? 0 : (double)misinfo * 100.0 / total;
+                    double rate = (double)misinfo * 100.0 / total;
                     return Tuple.Create(total, misinfo, rate);
                 }, token);
 
@@ -277,6 +326,7 @@ namespace GenAiMisinformation.forms
                         lblTotalPosts.Text = "Total posts: " + result.Item1;
                         lblMisinfoPosts.Text = "Misinformation posts: " + result.Item2;
                         lblMisinfoRate.Text = "Misinformation rate: " + result.Item3.ToString("0.00") + " %";
+                        progressBar.Value = 100;
                     }));
                 }
             }
@@ -289,6 +339,7 @@ namespace GenAiMisinformation.forms
                         lblTotalPosts.Text = "Analysis canceled.";
                         lblMisinfoPosts.Text = "Misinformation posts: -";
                         lblMisinfoRate.Text = "Misinformation rate: -";
+                        progressBar.Value = 0;
                     }));
                 }
             }
@@ -296,6 +347,14 @@ namespace GenAiMisinformation.forms
             {
                 MessageBox.Show("Error during analysis:\n" + ex.Message,
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                if (!this.IsDisposed)
+                {
+                    this.Invoke((Action)(() =>
+                    {
+                        progressBar.Value = 0;
+                    }));
+                }
             }
             finally
             {
