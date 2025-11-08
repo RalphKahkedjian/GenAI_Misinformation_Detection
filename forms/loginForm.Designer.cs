@@ -31,42 +31,56 @@
             textBox1 = new TextBox();
             textBox2 = new TextBox();
             button1 = new Button();
-            label1 = new Label();
+            label2 = new Label();
+            label3 = new Label();
             SuspendLayout();
             // 
             // textBox1
             // 
-            textBox1.Location = new Point(272, 127);
+            textBox1.Location = new Point(272, 140);
             textBox1.Name = "textBox1";
+            textBox1.PlaceholderText = "Enter your username";
             textBox1.Size = new Size(199, 27);
             textBox1.TabIndex = 0;
             // 
             // textBox2
             // 
-            textBox2.Location = new Point(272, 185);
+            textBox2.Location = new Point(272, 173);
             textBox2.Name = "textBox2";
+            textBox2.PlaceholderText = "Enter your password";
             textBox2.Size = new Size(199, 27);
             textBox2.TabIndex = 1;
             // 
             // button1
             // 
+            button1.BackColor = Color.Black;
+            button1.Font = new Font("Segoe UI Semibold", 10.2F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
+            button1.ForeColor = Color.WhiteSmoke;
             button1.Location = new Point(302, 230);
             button1.Name = "button1";
             button1.Size = new Size(125, 31);
             button1.TabIndex = 2;
             button1.Text = "Login";
-            button1.UseVisualStyleBackColor = true;
+            button1.UseVisualStyleBackColor = false;
             button1.Click += button1_Click;
             // 
-            // label1
+            // label2
             // 
-            label1.AutoSize = true;
-            label1.Font = new Font("Verdana", 24F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label1.Location = new Point(143, 42);
-            label1.Name = "label1";
-            label1.Size = new Size(515, 48);
-            label1.TabIndex = 3;
-            label1.Text = "GenAI Misinformation";
+            label2.AutoSize = true;
+            label2.Font = new Font("Segoe UI Semibold", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            label2.Location = new Point(159, 139);
+            label2.Name = "label2";
+            label2.Size = new Size(0, 25);
+            label2.TabIndex = 4;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Font = new Font("Segoe UI Semibold", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            label3.Location = new Point(159, 185);
+            label3.Name = "label3";
+            label3.Size = new Size(0, 25);
+            label3.TabIndex = 5;
             // 
             // loginForm
             // 
@@ -74,7 +88,8 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(189, 236, 175);
             ClientSize = new Size(800, 368);
-            Controls.Add(label1);
+            Controls.Add(label3);
+            Controls.Add(label2);
             Controls.Add(button1);
             Controls.Add(textBox2);
             Controls.Add(textBox1);
@@ -89,6 +104,7 @@
         private TextBox textBox1;
         private TextBox textBox2;
         private Button button1;
-        private Label label1;
+        private Label label2;
+        private Label label3;
     }
 }
