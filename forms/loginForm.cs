@@ -149,10 +149,16 @@ namespace GenAiMisinformation.forms
             return Task.Run(async () =>
             {
                 await Task.Delay(500);
-                return _credentials.TryGetValue(username, out string correctPassword) &&
-                       string.Equals(password, correctPassword, StringComparison.Ordinal);
+
+                if (_credentials.TryGetValue(username, out var correctPassword))
+                {
+                    return string.Equals(password, correctPassword, StringComparison.Ordinal);
+                }
+
+                return false;
             });
         }
+
 
         private void loginForm_Load(object sender, EventArgs e)
         {

@@ -11,22 +11,24 @@ namespace GenAiMisinformation.forms
         private readonly Mutex dataMutex = new Mutex();
         private readonly SemaphoreSlim loadSemaphore = new SemaphoreSlim(1, 1);
 
-        private Panel sidebarPanel;
-        private Panel mainPanel;
-        private FlowLayoutPanel buttonPanel;
+        private Panel sidebarPanel = null!;
+        private Panel mainPanel = null!;
+        private FlowLayoutPanel buttonPanel = null!;
 
-        private Button btnViewData;
-        private Button btnAnalyze;
-        private Button btnCancel;
+        private Button btnViewData = null!;
+        private Button btnAnalyze = null!;
+        private Button btnCancel = null!;
 
-        private Panel resultsPanel;
-        private Label lblResultsTitle;
-        private Label lblTotalPosts;
-        private Label lblMisinfoPosts;
-        private Label lblMisinfoRate;
+        private Panel resultsPanel = null!;
+        private Label lblResultsTitle = null!;
+        private Label lblTotalPosts = null!;
+        private Label lblMisinfoPosts = null!;
+        private Label lblMisinfoRate = null!;
 
-        private viewDataControl viewDataControl;
-        private CancellationTokenSource analysisCts;
+        private viewDataControl viewDataControl = null!;
+
+        // nullable: only set while analysis is running
+        private CancellationTokenSource? analysisCts;
 
         public dashboardForm()
         {
@@ -61,7 +63,7 @@ namespace GenAiMisinformation.forms
             this.Controls.Add(mainPanel);
             this.Controls.Add(sidebarPanel);
 
-            // ----- Button panel (under title, fixed) -----
+            // ----- Button panel (middle) -----
             buttonPanel = new FlowLayoutPanel
             {
                 FlowDirection = FlowDirection.TopDown,
@@ -133,7 +135,7 @@ namespace GenAiMisinformation.forms
             };
             resultsPanel.Controls.Add(lblMisinfoRate);
 
-            // ----- Title panel (added LAST so it stays on top) -----
+            // ----- Title panel (added last so it stays on top) -----
             Panel titlePanel = new Panel
             {
                 Dock = DockStyle.Top,
@@ -152,11 +154,10 @@ namespace GenAiMisinformation.forms
             };
             titlePanel.Controls.Add(titleLabel);
 
-            // Important: add controls to sidebar in this order
-            // so Docking results in: Title (top), Buttons (under), Results (bottom)
-            sidebarPanel.Controls.Add(resultsPanel);
-            sidebarPanel.Controls.Add(buttonPanel);
-            sidebarPanel.Controls.Add(titlePanel);
+            // Order matters for Dock:
+            sidebarPanel.Controls.Add(resultsPanel); // bottom
+            sidebarPanel.Controls.Add(buttonPanel);  // middle
+            sidebarPanel.Controls.Add(titlePanel);   // top
 
             // ----- Default page -----
             viewDataControl = new viewDataControl();
@@ -317,7 +318,7 @@ namespace GenAiMisinformation.forms
             analysisCts?.Cancel();
         }
 
-        private void dashboardForm_Load(object sender, EventArgs e)
+        private void dashboardForm_Load(object? sender, EventArgs e)
         {
         }
     }
