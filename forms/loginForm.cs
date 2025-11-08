@@ -53,6 +53,9 @@ namespace GenAiMisinformation.forms
 
                 if(isSuccess)
                 {
+                    var dashboardForm = new dashboardForm();
+                    dashboardForm.StartPosition = FormStartPosition.CenterScreen;
+                    dashboardForm.Show();
                     this.Hide();
                 }
 
