@@ -5,15 +5,18 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using GenAiMisinformation; // for MisinformationRecord
 
 namespace GenAiMisinformation.forms
 {
     public partial class viewDataControl : UserControl
     {
+        // Expose records so dashboardForm can analyze them
+        public List<MisinformationRecord> Records { get; private set; } = new List<MisinformationRecord>();
+
         public viewDataControl()
         {
             InitializeComponent();
@@ -22,18 +25,16 @@ namespace GenAiMisinformation.forms
 
         private void SetupUI()
         {
-            dataGridView1 = new DataGridView
-            {
-                Dock = DockStyle.Fill,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                ReadOnly = true,
-                AllowUserToAddRows = false,
-                BackgroundColor = Color.White,
-                BorderStyle = BorderStyle.None
-            };
+            // Style the existing designer dataGridView1
+            dataGridView1.Dock = DockStyle.Fill;
+            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dataGridView1.ReadOnly = true;
+            dataGridView1.AllowUserToAddRows = false;
+            dataGridView1.BackgroundColor = Color.White;
+            dataGridView1.BorderStyle = BorderStyle.None;
 
-            this.Controls.Add(dataGridView1);
-            this.Load += (s, e) => viewDataControl_Load(s, e);
+            // Ensure load handler is hooked (Designer may already do this)
+            this.Load += viewDataControl_Load;
         }
 
         private void viewDataControl_Load(object sender, EventArgs e)
@@ -42,21 +43,29 @@ namespace GenAiMisinformation.forms
 
             if (!File.Exists(path))
             {
-                MessageBox.Show("CSV file not found: " + path);
+                MessageBox.Show("CSV file not found: " + path, "File Missing", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            using (var reader = new StreamReader(path))
-            using (var csv = new CsvHelper.CsvReader(reader, CultureInfo.InvariantCulture))
+            try
             {
-                var records = csv.GetRecords<MisinformationRecord>().ToList();
-                dataGridView1.DataSource = records;
+                using (var reader = new StreamReader(path))
+                using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+                {
+                    var records = csv.GetRecords<MisinformationRecord>().ToList();
+                    Records = records;
+                    dataGridView1.DataSource = Records;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading CSV:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-
+            // not used, but can stay for Designer wiring
         }
     }
 }

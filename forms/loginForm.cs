@@ -24,7 +24,7 @@ namespace GenAiMisinformation.forms
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.BackColor = Color.FromArgb(189, 236, 175); 
+            this.BackColor = Color.FromArgb(189, 236, 175);
             SetupModernLayout();
         }
 
@@ -152,6 +152,11 @@ namespace GenAiMisinformation.forms
                 return _credentials.TryGetValue(username, out string correctPassword) &&
                        string.Equals(password, correctPassword, StringComparison.Ordinal);
             });
+        }
+
+        private void loginForm_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

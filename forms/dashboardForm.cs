@@ -1,24 +1,32 @@
-﻿using System.Threading;
+﻿using System;
+using System.Drawing;
+using System.Threading;
 using System.Threading.Tasks;
-
+using System.Windows.Forms;
 
 namespace GenAiMisinformation.forms
 {
     public partial class dashboardForm : Form
     {
-        private Mutex dataMutex = new Mutex();
-        private SemaphoreSlim loadSemaphore = new SemaphoreSlim(1, 1);
+        private readonly Mutex dataMutex = new Mutex();
+        private readonly SemaphoreSlim loadSemaphore = new SemaphoreSlim(1, 1);
 
-        private Button btnViewData;
-        private Button btnAdminView;
-        private Button btnInsights;
         private Panel sidebarPanel;
         private Panel mainPanel;
+        private FlowLayoutPanel buttonPanel;
 
-        private UserControl viewDataControl;
-        private UserControl adminViewControl;
-        private UserControl insightsControl;
+        private Button btnViewData;
+        private Button btnAnalyze;
+        private Button btnCancel;
 
+        private Panel resultsPanel;
+        private Label lblResultsTitle;
+        private Label lblTotalPosts;
+        private Label lblMisinfoPosts;
+        private Label lblMisinfoRate;
+
+        private viewDataControl viewDataControl;
+        private CancellationTokenSource analysisCts;
 
         public dashboardForm()
         {
@@ -29,27 +37,109 @@ namespace GenAiMisinformation.forms
         private void SetupUI()
         {
             this.Text = "AI Misinformation Detection";
-            this.WindowState = FormWindowState.Maximized;
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.WindowState = FormWindowState.Normal;
+            this.Size = new Size(1200, 800);
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.WhiteSmoke;
 
+            // ----- Sidebar -----
             sidebarPanel = new Panel
             {
                 Dock = DockStyle.Left,
-                Width = 350,
-                BackColor = System.Drawing.ColorTranslator.FromHtml("#BDECAF")
+                Width = 380,
+                BackColor = ColorTranslator.FromHtml("#BDECAF")
             };
 
-
+            // ----- Main area (right) -----
             mainPanel = new Panel
             {
                 Dock = DockStyle.Fill,
-                BackColor = System.Drawing.Color.WhiteSmoke
+                BackColor = Color.WhiteSmoke
             };
+
             this.Controls.Add(mainPanel);
             this.Controls.Add(sidebarPanel);
 
-            viewDataControl = new viewDataControl();
+            // ----- Button panel (under title, fixed) -----
+            buttonPanel = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.TopDown,
+                Dock = DockStyle.Top,
+                Padding = new Padding(0, 20, 0, 20),
+                WrapContents = false,
+                Height = 230,
+                AutoSize = false
+            };
+
+            btnViewData = CreateSidebarButton("View Data");
+            btnViewData.Click += (s, e) => showPage(viewDataControl);
+            buttonPanel.Controls.Add(btnViewData);
+
+            btnAnalyze = CreateSidebarButton("Analyze");
+            btnAnalyze.Click += (s, e) => StartAnalysis();
+            buttonPanel.Controls.Add(btnAnalyze);
+
+            btnCancel = CreateSidebarButton("Cancel");
+            btnCancel.Click += (s, e) => CancelAnalysis();
+            btnCancel.Enabled = false;
+            buttonPanel.Controls.Add(btnCancel);
+
+            // ----- Results panel at bottom -----
+            resultsPanel = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 160,
+                BackColor = Color.FromArgb(230, 255, 230)
+            };
+
+            lblResultsTitle = new Label
+            {
+                Text = "Analysis Results",
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                ForeColor = Color.Black,
+                AutoSize = true,
+                Location = new Point(15, 15)
+            };
+            resultsPanel.Controls.Add(lblResultsTitle);
+
+            lblTotalPosts = new Label
+            {
+                Text = "Total posts: -",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.Black,
+                AutoSize = true,
+                Location = new Point(25, 45)
+            };
+            resultsPanel.Controls.Add(lblTotalPosts);
+
+            lblMisinfoPosts = new Label
+            {
+                Text = "Misinformation posts: -",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.Black,
+                AutoSize = true,
+                Location = new Point(25, 70)
+            };
+            resultsPanel.Controls.Add(lblMisinfoPosts);
+
+            lblMisinfoRate = new Label
+            {
+                Text = "Misinformation rate: -",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.Black,
+                AutoSize = true,
+                Location = new Point(25, 95)
+            };
+            resultsPanel.Controls.Add(lblMisinfoRate);
+
+            // ----- Title panel (added LAST so it stays on top) -----
+            Panel titlePanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 120,
+                BackColor = ColorTranslator.FromHtml("#BDECAF")
+            };
 
             Label titleLabel = new Label
             {
@@ -57,29 +147,25 @@ namespace GenAiMisinformation.forms
                 Font = new Font("Segoe UI", 14, FontStyle.Bold),
                 ForeColor = Color.Black,
                 AutoSize = false,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Dock = DockStyle.Top,
-                Height = 120,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleCenter
             };
-            sidebarPanel.Controls.Add(titleLabel);
+            titlePanel.Controls.Add(titleLabel);
 
-            btnViewData = createSidebarButton("View Data", 300);
-            btnViewData.Click += (s, e) => showPage(viewDataControl);
+            // Important: add controls to sidebar in this order
+            // so Docking results in: Title (top), Buttons (under), Results (bottom)
+            sidebarPanel.Controls.Add(resultsPanel);
+            sidebarPanel.Controls.Add(buttonPanel);
+            sidebarPanel.Controls.Add(titlePanel);
 
-            btnAdminView = createSidebarButton("Admin View", 390);
-            //btnAdminView.Click += (s, e) => showPage(adminViewControl);
-
-            btnInsights = createSidebarButton("Insights", 480);
-            //btnInsights.Click += (s, e) => showPage(viewDataControl);
-
-            sidebarPanel.Controls.Add(btnViewData);
-            sidebarPanel.Controls.Add(btnAdminView);
-            sidebarPanel.Controls.Add(btnInsights);
+            // ----- Default page -----
+            viewDataControl = new viewDataControl();
+            showPage(viewDataControl);
         }
 
-        private Button createSidebarButton(string text, int top)
+        private Button CreateSidebarButton(string text)
         {
-            Button btn = new Button
+            var btn = new Button
             {
                 Text = text,
                 ForeColor = Color.White,
@@ -87,19 +173,10 @@ namespace GenAiMisinformation.forms
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 11, FontStyle.Bold),
                 Height = 50,
-                Width = 220,
-                Top = top,
-                Cursor = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleCenter
+                Width = 240,
+                Margin = new Padding(70, 10, 70, 10),
+                Cursor = Cursors.Hand
             };
-
-            btn.FlatAppearance.BorderSize = 0;
-            btn.Left = (sidebarPanel.Width - btn.Width) / 2;
-            sidebarPanel.Resize += (s, e) =>
-            {
-                btn.Left = (sidebarPanel.Width - btn.Width) / 2;
-            };
-
 
             btn.FlatAppearance.BorderSize = 0;
             btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(70, 70, 70);
@@ -122,10 +199,10 @@ namespace GenAiMisinformation.forms
             await Task.Run(() =>
             {
                 dataMutex.WaitOne();
-                loadSemaphore.Wait(); 
+                loadSemaphore.Wait();
                 try
                 {
-                    Thread.Sleep(1000);
+                    Thread.Sleep(300);
                 }
                 finally
                 {
@@ -134,14 +211,114 @@ namespace GenAiMisinformation.forms
                 }
             });
 
-            userControl.Visible = true;
-            userControl.BringToFront();
+            if (!userControl.IsDisposed)
+            {
+                userControl.Visible = true;
+                userControl.BringToFront();
+            }
         }
 
+        private async void StartAnalysis()
+        {
+            if (viewDataControl == null || viewDataControl.Records == null || viewDataControl.Records.Count == 0)
+            {
+                MessageBox.Show("Please click 'View Data' first to load the dataset.",
+                    "No Data", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (analysisCts != null)
+            {
+                MessageBox.Show("Analysis is already running.",
+                    "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            analysisCts = new CancellationTokenSource();
+            var token = analysisCts.Token;
+
+            btnAnalyze.Enabled = false;
+            btnViewData.Enabled = false;
+            btnCancel.Enabled = true;
+
+            lblTotalPosts.Text = "Total posts: ...";
+            lblMisinfoPosts.Text = "Misinformation posts: ...";
+            lblMisinfoRate.Text = "Misinformation rate: ...";
+
+            try
+            {
+                var records = viewDataControl.Records;
+
+                var result = await Task.Run(() =>
+                {
+                    int total = 0;
+                    int misinfo = 0;
+
+                    foreach (var r in records)
+                    {
+                        token.ThrowIfCancellationRequested();
+
+                        total++;
+                        if (r.is_misinformation)
+                            misinfo++;
+
+                        Thread.Sleep(1);
+                    }
+
+                    double rate = total == 0 ? 0 : (double)misinfo * 100.0 / total;
+                    return Tuple.Create(total, misinfo, rate);
+                }, token);
+
+                if (!token.IsCancellationRequested && !this.IsDisposed)
+                {
+                    this.Invoke((Action)(() =>
+                    {
+                        lblTotalPosts.Text = "Total posts: " + result.Item1;
+                        lblMisinfoPosts.Text = "Misinformation posts: " + result.Item2;
+                        lblMisinfoRate.Text = "Misinformation rate: " + result.Item3.ToString("0.00") + " %";
+                    }));
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                if (!this.IsDisposed)
+                {
+                    this.Invoke((Action)(() =>
+                    {
+                        lblTotalPosts.Text = "Analysis canceled.";
+                        lblMisinfoPosts.Text = "Misinformation posts: -";
+                        lblMisinfoRate.Text = "Misinformation rate: -";
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error during analysis:\n" + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (!this.IsDisposed)
+                {
+                    this.Invoke((Action)(() =>
+                    {
+                        btnAnalyze.Enabled = true;
+                        btnViewData.Enabled = true;
+                        btnCancel.Enabled = false;
+                    }));
+                }
+
+                analysisCts = null;
+            }
+        }
+
+        private void CancelAnalysis()
+        {
+            analysisCts?.Cancel();
+        }
 
         private void dashboardForm_Load(object sender, EventArgs e)
         {
-
         }
     }
 }
