@@ -24,11 +24,10 @@ namespace GenAiMisinformation.forms
         private Label lblTotalPosts = null!;
         private Label lblMisinfoPosts = null!;
         private Label lblMisinfoRate = null!;
-        private ProgressBar progressBar = null!;  // NEW
+        private ProgressBar progressBar = null!;
+        private Label lblProgressPercent = null!;
 
         private viewDataControl viewDataControl = null!;
-
-        // nullable: only active while analysis is running
         private CancellationTokenSource? analysisCts;
 
         public dashboardForm()
@@ -136,29 +135,40 @@ namespace GenAiMisinformation.forms
             };
             resultsPanel.Controls.Add(lblMisinfoRate);
 
-            // ----- ProgressBar (inside results panel) -----
+            // Progress bar
             progressBar = new ProgressBar
             {
                 Minimum = 0,
                 Maximum = 100,
                 Value = 0,
                 Step = 1,
-                Width = resultsPanel.Width - 50,
                 Height = 18,
                 Location = new Point(25, 125),
                 Style = ProgressBarStyle.Continuous
             };
+            progressBar.Width = resultsPanel.Width - 90;
             progressBar.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
-
-            // Resize handler so bar stretches with the panel
-            resultsPanel.Resize += (s, e) =>
-            {
-                progressBar.Width = resultsPanel.Width - 50;
-            };
-
             resultsPanel.Controls.Add(progressBar);
 
-            // ----- Title panel (top, added last so it stays above buttons) -----
+            // Percentage label to the right of the progress bar
+            lblProgressPercent = new Label
+            {
+                Text = "0%",
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = Color.Black,
+                AutoSize = true
+            };
+            lblProgressPercent.Location = new Point(progressBar.Right + 5, progressBar.Top - 1);
+            resultsPanel.Controls.Add(lblProgressPercent);
+
+            // Adjust on resize so bar + percentage stay aligned
+            resultsPanel.Resize += (s, e) =>
+            {
+                progressBar.Width = resultsPanel.Width - 90;
+                lblProgressPercent.Location = new Point(progressBar.Right + 5, progressBar.Top - 1);
+            };
+
+            // ----- Title panel (top) -----
             Panel titlePanel = new Panel
             {
                 Dock = DockStyle.Top,
@@ -182,7 +192,7 @@ namespace GenAiMisinformation.forms
             sidebarPanel.Controls.Add(buttonPanel);  // middle
             sidebarPanel.Controls.Add(titlePanel);   // top
 
-            // ----- Default page -----
+            // Default page
             viewDataControl = new viewDataControl();
             showPage(viewDataControl);
         }
@@ -269,6 +279,7 @@ namespace GenAiMisinformation.forms
             lblMisinfoPosts.Text = "Misinformation posts: ...";
             lblMisinfoRate.Text = "Misinformation rate: ...";
             progressBar.Value = 0;
+            lblProgressPercent.Text = "0%";
 
             try
             {
@@ -283,32 +294,27 @@ namespace GenAiMisinformation.forms
 
                     for (int i = 0; i < total; i++)
                     {
-                        if (token.IsCancellationRequested)
-                        {
-                            MessageBox.Show("Operation was cancelled");
-                            break;
-                        }
+                        token.ThrowIfCancellationRequested();
 
                         if (records[i].is_misinformation)
                             misinfo++;
 
-                        // Simulate work
                         Thread.Sleep(1);
 
-                        // Update progress every 200 items or at end
                         if (i % 200 == 0 || i == total - 1)
                         {
                             int percent = (int)((i + 1) * 100.0 / total);
+                            if (percent < 0) percent = 0;
+                            if (percent > 100) percent = 100;
+
                             try
                             {
-                                // Marshal progress update to UI thread
                                 this.Invoke((Action)(() =>
                                 {
-                                    if (!progressBar.IsDisposed)
+                                    if (!progressBar.IsDisposed && !lblProgressPercent.IsDisposed)
                                     {
-                                        if (percent < 0) percent = 0;
-                                        if (percent > 100) percent = 100;
                                         progressBar.Value = percent;
+                                        lblProgressPercent.Text = percent + "%";
                                     }
                                 }));
                             }
@@ -331,6 +337,7 @@ namespace GenAiMisinformation.forms
                         lblMisinfoPosts.Text = "Misinformation posts: " + result.Item2;
                         lblMisinfoRate.Text = "Misinformation rate: " + result.Item3.ToString("0.00") + " %";
                         progressBar.Value = 100;
+                        lblProgressPercent.Text = "100%";
                     }));
                 }
             }
@@ -344,6 +351,7 @@ namespace GenAiMisinformation.forms
                         lblMisinfoPosts.Text = "Misinformation posts: -";
                         lblMisinfoRate.Text = "Misinformation rate: -";
                         progressBar.Value = 0;
+                        lblProgressPercent.Text = "0%";
                     }));
                 }
             }
@@ -357,6 +365,7 @@ namespace GenAiMisinformation.forms
                     this.Invoke((Action)(() =>
                     {
                         progressBar.Value = 0;
+                        lblProgressPercent.Text = "0%";
                     }));
                 }
             }
